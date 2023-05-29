@@ -83,19 +83,35 @@ class Carrito {
     async agregarProducto(sku, cantidad) {
         console.log(`Agregando ${cantidad} ${sku}`);
 
+        try {
         // Busco el producto en la "base de datos"
         const producto = await findProductBySku(sku);
 
         console.log("Producto encontrado", producto);
 
-        // Creo un producto nuevo
-        const nuevoProducto = new ProductoEnCarrito(sku, producto.nombre, cantidad);
-        this.productos.push(nuevoProducto);
+        const productoEnLista = this.productos.find((producto) => producto.sku === sku);
+
+        if (productoEnLista) {
+            // Actualizar la cantidad del producto existente
+            productoEnLista.cantidad += cantidad;
+          } 
+        else {
+            // Crear un producto nuevo
+            const nuevoProducto = new ProductoEnCarrito(sku,producto.nombre,cantidad);
+            this.productos.push(nuevoProducto);
+            
+        }
+        if (!this.categorias.includes(producto.categoria)) {
+            // Agregar la categoría a la lista si no esta
+            this.categorias.push(producto.categoria);
+        }
         this.precioTotal = this.precioTotal + (producto.precio * cantidad);
-        this.categorias.push(producto.categoria);
+
+        }catch (error) {
+            console.error(error.message);
+        }
     }
 }
-
 // Cada producto que se agrega al carrito es creado con esta clase
 class ProductoEnCarrito {
     sku;       // Identificador único del producto
@@ -118,7 +134,7 @@ function findProductBySku(sku) {
             if (foundProduct) {
                 resolve(foundProduct);
             } else {
-                reject(`Product ${sku} not found`);
+                reject( new Error(`Producto ${nombre} ${sku} no encontrado`));
             }
         }, 1500);
     });
